@@ -1,41 +1,44 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ContactForm } from './FormContacts/Form';
 import { ListContacts } from './ListContacts/ListContacts';
 import { Filter } from './FilterSearch/FilterSearch';
 import { GlobalStyle } from 'styles/GlobalStyles';
 import { Container, MainTitle, SearchTitle } from './App.styled';
 
-export class App extends Component {
-  state = {
-    // contacts: [],
-    contacts: [
-      { id: 'id-1', name: 'Albus Dumbledore', number: '459-12-56' },
-      { id: 'id-2', name: 'Elon Musk', number: '443-89-12' },
-      { id: 'id-3', name: 'Beyonse Knowles', number: '645-17-79' },
-      { id: 'id-4', name: 'Bill Gates', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+export function App() {
+  const [contacts, setContacts] = useState(() => {
+    return (
+      JSON.parse(window.localStorage.getItem('contacts')) ?? [
+        { id: 'id-1', name: 'Albus Dumbledore', number: '459-12-56' },
+        { id: 'id-2', name: 'Boris Johnson', number: '443-89-12' },
+        { id: 'id-3', name: 'Beyonse Knowles', number: '645-17-79' },
+        { id: 'id-4', name: 'Bill Gates', number: '227-91-26' },
+      ]
+    );
+  });
 
-  addItemContact = ({ id, name, number }) => {
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
+    window.localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  const addItemContact = contacts => {
+    const { id, name, number } = contacts;
     const itemContact = {
       id,
       name,
       number,
     };
 
-    this.setState(({ contacts }) => ({
-      contacts: [itemContact, ...contacts],
-    }));
+    setContacts(state => [itemContact, ...state]);
   };
 
-  changeFilter = event => {
-    this.setState({ filter: event.currentTarget.value });
+  const changeFilter = event => {
+    setFilter(event.currentTarget.value);
   };
 
-  getVisibleContacts = () => {
-    const { filter, contacts } = this.state;
-
+  const getVisibleContacts = () => {
     const constNormalizedFilter = filter.toLowerCase();
 
     const filterContacts = contacts.filter(contact =>
@@ -45,54 +48,25 @@ export class App extends Component {
     return filterContacts;
   };
 
-  onDeleteContact = id => {
-    const { contacts } = this.state;
-
+  const onDeleteContact = id => {
     const filterContacts = contacts.filter(contact => contact.id !== id);
 
-    this.setState(() => ({
-      contacts: [...filterContacts],
-    }));
+    setContacts([...filterContacts]);
   };
 
-  componentDidMount() {
-    const contacts = localStorage.getItem('contacts');
-    const parsedContacts = JSON.parse(contacts);
-
-    if (parsedContacts) {
-      this.setState({ contacts: parsedContacts });
-    }
-  }
-
-  componentDidUpdate(_, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      // console.log('Обновились контакты');
-
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
-
-  render() {
-    const { contacts, filter } = this.state;
-    const visibleContacts = this.getVisibleContacts();
-
-    return (
-      <>
-        <GlobalStyle />
-        <Container>
-          <MainTitle>Phonebook</MainTitle>
-          <ContactForm
-            addItemContact={this.addItemContact}
-            contacts={contacts}
-          />
-          <SearchTitle>Contacts</SearchTitle>
-          <Filter value={filter} onChangeFilter={this.changeFilter} />
-          <ListContacts
-            contacts={visibleContacts}
-            onDelete={this.onDeleteContact}
-          />
-        </Container>
-      </>
-    );
-  }
+  return (
+    <>
+      <GlobalStyle />
+      <Container>
+        <MainTitle>Phonebook</MainTitle>
+        <ContactForm addItemContact={addItemContact} contacts={contacts} />
+        <SearchTitle>Contacts</SearchTitle>
+        <Filter value={filter} onChangeFilter={changeFilter} />
+        <ListContacts
+          contacts={getVisibleContacts()}
+          onDelete={onDeleteContact}
+        />
+      </Container>
+    </>
+  );
 }
